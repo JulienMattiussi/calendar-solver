@@ -15,3 +15,23 @@ build: ## Build application for production
 
 lint: ## Run linter
 	npm run lint
+
+typecheck: ## Run TypeScript type checker
+	npm run typecheck
+
+format-check: ## Check formatting with Prettier
+	npm run format:check
+
+test: test-unit test-e2e ## Run all tests (unit + e2e)
+
+test-unit: ## Run unit and component tests
+	npm run test
+
+test-watch: ## Run unit and component tests in watch mode
+	npm run test:watch
+
+test-e2e: ## Run e2e tests (requires running dev server or starts one automatically)
+	npm run test:e2e
+
+test-e2e-ui: ## Run e2e tests with Playwright UI
+	npm run test:e2e:ui

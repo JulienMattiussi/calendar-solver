@@ -30,7 +30,7 @@ body {
    Desktop: tray is on the right  → origin: right center (grows left→right from tray side)
    Mobile:  tray is below         → origin: center bottom (grows bottom→top from tray side) */
 .piece-group {
-  transform-box:    fill-box;
+  transform-box: fill-box;
   transform-origin: right center;
 }
 @media (max-width: 767px) {
@@ -40,10 +40,22 @@ body {
 }
 
 @keyframes piece-in {
-  from { opacity: 0; transform: scale(0); }
-  to   { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 @keyframes piece-out {
-  from { opacity: 1; transform: scale(1); }
-  to   { opacity: 0; transform: scale(0); }
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0);
+  }
 }

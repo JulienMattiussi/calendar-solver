@@ -4,26 +4,31 @@ import { PIECES, TRAY_SZ } from "@/lib/pieces";
 import type { Placement } from "@/lib/solver";
 
 interface PieceTrayProps {
-  placements:    Placement[];
-  activeId:      string | null;
-  solving:       boolean;
+  placements: Placement[];
+  activeId: string | null;
+  solving: boolean;
   onSelectPiece: (id: string | null) => void;
-  onRotate:      () => void;
-  onReset:       () => void;
-  onSolve:       () => void;
+  onRotate: () => void;
+  onReset: () => void;
+  onSolve: () => void;
 }
 
 export default function PieceTray({
-  placements, activeId, solving,
-  onSelectPiece, onRotate, onReset, onSolve,
+  placements,
+  activeId,
+  solving,
+  onSelectPiece,
+  onRotate,
+  onReset,
+  onSolve,
 }: PieceTrayProps) {
-  const placedIds = new Set(placements.map(p => p.pieceId));
+  const placedIds = new Set(placements.map((p) => p.pieceId));
 
-  const pieces = PIECES.map(piece => {
+  const pieces = PIECES.map((piece) => {
     const isPlaced = placedIds.has(piece.id);
     const isActive = activeId === piece.id;
-    const maxR = Math.max(...piece.cells.map(c => c[0]));
-    const maxC = Math.max(...piece.cells.map(c => c[1]));
+    const maxR = Math.max(...piece.cells.map((c) => c[0]));
+    const maxC = Math.max(...piece.cells.map((c) => c[1]));
     const svgW = (maxC + 1) * TRAY_SZ;
     const svgH = (maxR + 1) * TRAY_SZ;
     const btnW = Math.max(svgW + 20, 60);
@@ -35,7 +40,11 @@ export default function PieceTray({
         disabled={isPlaced}
         onClick={() => {
           if (isPlaced) return;
-          if (isActive) { onRotate(); } else { onSelectPiece(piece.id); }
+          if (isActive) {
+            onRotate();
+          } else {
+            onSelectPiece(piece.id);
+          }
         }}
         title={isPlaced ? "Placed" : `Select piece ${piece.id}`}
         style={{
@@ -59,14 +68,22 @@ export default function PieceTray({
         }}
       >
         <svg
-          width={svgW} height={svgH}
+          width={svgW}
+          height={svgH}
           viewBox={`0 0 ${svgW} ${svgH}`}
-          style={{ position: "absolute", left: Math.max((btnW - svgW) / 2, 4), top: 8 }}
+          style={{
+            position: "absolute",
+            left: Math.max((btnW - svgW) / 2, 4),
+            top: 8,
+          }}
         >
           {piece.cells.map(([r, c], i) => (
-            <rect key={i}
-              x={c * TRAY_SZ + 1} y={r * TRAY_SZ + 1}
-              width={TRAY_SZ - 2} height={TRAY_SZ - 2}
+            <rect
+              key={i}
+              x={c * TRAY_SZ + 1}
+              y={r * TRAY_SZ + 1}
+              width={TRAY_SZ - 2}
+              height={TRAY_SZ - 2}
               rx={2}
               fill={isPlaced ? "#ccc" : piece.color}
               stroke={isPlaced ? "#bbb" : "rgba(100,70,10,0.35)"}
@@ -74,11 +91,16 @@ export default function PieceTray({
             />
           ))}
         </svg>
-        <span style={{
-          position: "absolute", bottom: 2, right: 4,
-          fontSize: 9, fontWeight: "bold",
-          color: isPlaced ? "#aaa" : "#8b6914",
-        }}>
+        <span
+          style={{
+            position: "absolute",
+            bottom: 2,
+            right: 4,
+            fontSize: 9,
+            fontWeight: "bold",
+            color: isPlaced ? "#aaa" : "#8b6914",
+          }}
+        >
           {isPlaced ? "✓" : piece.id}
         </span>
       </button>
@@ -103,9 +125,15 @@ export default function PieceTray({
         <button
           onClick={onReset}
           style={{
-            flex: 1, padding: "6px 0", borderRadius: 8, fontSize: 11, fontWeight: 600,
-            background: "rgba(139,105,20,0.07)", border: "1px solid rgba(139,105,20,0.2)",
-            color: "#7a5218", cursor: "pointer",
+            flex: 1,
+            padding: "6px 0",
+            borderRadius: 8,
+            fontSize: 11,
+            fontWeight: 600,
+            background: "rgba(139,105,20,0.07)",
+            border: "1px solid rgba(139,105,20,0.2)",
+            color: "#7a5218",
+            cursor: "pointer",
           }}
         >
           Reset all
@@ -114,11 +142,16 @@ export default function PieceTray({
           onClick={onSolve}
           disabled={solving}
           style={{
-            flex: 2, padding: "8px 0", borderRadius: 8, fontSize: 12, fontWeight: 700,
+            flex: 2,
+            padding: "8px 0",
+            borderRadius: 8,
+            fontSize: 12,
+            fontWeight: 700,
             background: solving
               ? "rgba(139,105,20,0.1)"
               : "linear-gradient(135deg, #c8972a 0%, #a07020 100%)",
-            border: "none", color: solving ? "#a08050" : "#fff",
+            border: "none",
+            color: solving ? "#a08050" : "#fff",
             cursor: solving ? "default" : "pointer",
             boxShadow: solving ? "none" : "0 2px 8px rgba(139,105,20,0.35)",
             letterSpacing: "0.04em",

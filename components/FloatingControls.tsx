@@ -3,23 +3,27 @@
 interface FloatingControlsProps {
   activeId: string | null;
   onRotate: () => void;
-  onFlip:   () => void;
+  onFlip: () => void;
   onCancel: () => void;
 }
 
-export default function FloatingControls({ activeId, onRotate, onFlip, onCancel }: FloatingControlsProps) {
+export default function FloatingControls({
+  activeId,
+  onRotate,
+  onFlip,
+  onCancel,
+}: FloatingControlsProps) {
   if (!activeId) return null;
 
   return (
     <div
-      className="md:hidden"
+      className="flex md:hidden"
       style={{
         position: "absolute",
         bottom: 12,
         left: "50%",
         transform: "translateX(-50%)",
         zIndex: 10,
-        display: "flex",
         gap: 8,
         background: "rgba(30,20,5,0.72)",
         backdropFilter: "blur(8px)",
@@ -31,12 +35,15 @@ export default function FloatingControls({ activeId, onRotate, onFlip, onCancel 
     >
       {[
         { label: "↻ Rotate", action: onRotate },
-        { label: "⇄ Flip",   action: onFlip   },
+        { label: "⇄ Flip", action: onFlip },
         { label: "✕ Cancel", action: onCancel },
       ].map(({ label, action }) => (
         <button
           key={label}
-          onTouchEnd={(e) => { e.stopPropagation(); action(); }}
+          onTouchEnd={(e) => {
+            e.stopPropagation();
+            action();
+          }}
           onClick={action}
           style={{
             padding: "7px 14px",

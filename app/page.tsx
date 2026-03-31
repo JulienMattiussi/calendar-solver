@@ -32,8 +32,14 @@ export default function CalendarPuzzle() {
 
   const [boardScale, setBoardScale] = useState(1);
   useEffect(() => {
-    const update = () =>
-      setBoardScale(Math.min(1, (document.documentElement.clientWidth - 40) / BOARD_OUTER_WIDTH));
+    const update = () => {
+      const vw = document.documentElement.clientWidth;
+      const scaleW = (vw - 40) / BOARD_OUTER_WIDTH;
+      if (scaleW >= 1) { setBoardScale(1); return; } // desktop: width fits, no scaling
+      // Mobile: also cap by height — ~220px reserved for header, tray, panel, gaps, padding
+      const scaleH = (window.innerHeight - 220) / BOARD_OUTER_HEIGHT;
+      setBoardScale(Math.min(scaleW, scaleH));
+    };
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
@@ -189,8 +195,8 @@ export default function CalendarPuzzle() {
   const scaledH = Math.round(BOARD_OUTER_HEIGHT * boardScale);
 
   return (
-    <main className="min-h-screen bg-stone-100 flex flex-col items-center justify-center p-4 gap-5">
-      <h1 className="text-2xl font-bold text-stone-700 tracking-wide uppercase">
+    <main className="min-h-screen bg-stone-100 flex flex-col items-center justify-center p-2 md:p-4 gap-2 md:gap-5">
+      <h1 className="text-lg md:text-2xl font-bold text-stone-700 tracking-wide uppercase">
         A-Puzzle-A-Day
       </h1>
 

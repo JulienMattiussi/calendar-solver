@@ -123,11 +123,21 @@ export default function CalendarPuzzle() {
       setPlacements(prev => [...prev, { pieceId: activeId, row, col, rot: rotation, flipped }]);
       setActiveId(null); setRotation(0); setFlipped(false);
     } else {
+      // Click on a placed piece → pick it up to reposition
+      const pieceId = coverage.get(`${row},${col}`);
+      if (pieceId && !removingIds.has(pieceId)) {
+        const pl = placements.find(p => p.pieceId === pieceId)!;
+        setPlacements(prev => prev.filter(p => p.pieceId !== pieceId));
+        setActiveId(pieceId);
+        setRotation(pl.rot);
+        setFlipped(pl.flipped);
+        return;
+      }
       if (MONTHS.includes(label))        setMonth(label);
       else if (DAYS_DOW.includes(label)) setDow(label);
       else                               setDay(label);
     }
-  }, [activeId, activePiece, previewValid, rotation, flipped]);
+  }, [activeId, activePiece, previewValid, rotation, flipped, coverage, removingIds, placements]);
 
   const ANIM_MS = 300;
 

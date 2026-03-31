@@ -7,7 +7,10 @@ import PieceTray    from "@/components/PieceTray";
 import ControlPanel from "@/components/ControlPanel";
 import ConfirmModal from "@/components/ConfirmModal";
 
-import { BOARD_ROWS, MONTHS, DAYS_DOW, TOTAL_BOARD_CELLS, getDefaultDate } from "@/lib/board";
+import {
+  BOARD_ROWS, MONTHS, DAYS_DOW, TOTAL_BOARD_CELLS, getDefaultDate,
+  BOARD_OUTER_WIDTH, BOARD_OUTER_HEIGHT,
+} from "@/lib/board";
 import { PIECES, absoluteCells, type RC, type Rot } from "@/lib/pieces";
 import { solvePuzzle, type Placement } from "@/lib/solver";
 
@@ -24,6 +27,17 @@ export default function CalendarPuzzle() {
   const [hover,       setHover]       = useState<RC | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [solving,     setSolving]     = useState(false);
+
+  // Scale the board to fit narrow viewports (mobile).
+  // Deduct 2 × p-4 (32px) from the viewport width as the main horizontal padding.
+  const [boardScale, setBoardScale] = useState(1);
+  useEffect(() => {
+    const update = () =>
+      setBoardScale(Math.min(1, (window.innerWidth - 32) / BOARD_OUTER_WIDTH));
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
 
   // "r,c" -> pieceId for placed pieces
   const coverage = useMemo(() => {
@@ -115,8 +129,36 @@ export default function CalendarPuzzle() {
     setActiveId(null);
   }, []);
 
+  const trayProps = {
+    placements,
+    activeId,
+    solving,
+    onSelectPiece: handleSelectPiece,
+    onReset: handleReset,
+    onSolve: () => { setActiveId(null); setShowConfirm(true); },
+  };
+
+  const boardProps = {
+    placements, coverage, preview, previewValid,
+    month, day, dow, activeId,
+    onCellClick: handleCellClick,
+    onRightClick: handleRightClick,
+    onHover: setHover,
+  };
+
+  const panelProps = {
+    activeId,
+    onRotate: () => setRotation(r => ((r + 1) % 4) as Rot),
+    onFlip:   () => setFlipped(f => !f),
+    onCancel: () => setActiveId(null),
+  };
+
+  // Scaled board dimensions (only shrinks, never grows past natural size)
+  const scaledW = Math.round(BOARD_OUTER_WIDTH  * boardScale);
+  const scaledH = Math.round(BOARD_OUTER_HEIGHT * boardScale);
+
   return (
-    <main className="min-h-screen bg-stone-100 flex flex-col items-center justify-center p-6 gap-5">
+    <main className="min-h-screen bg-stone-100 flex flex-col items-center justify-center p-4 gap-5">
       <h1 className="text-2xl font-bold text-stone-700 tracking-wide uppercase">
         A-Puzzle-A-Day
       </h1>
@@ -127,37 +169,29 @@ export default function CalendarPuzzle() {
         </div>
       )}
 
-      <div className="flex gap-6 items-start">
-        <div className="flex flex-col gap-4 items-start">
-          <Board
-            placements={placements}
-            coverage={coverage}
-            preview={preview}
-            previewValid={previewValid}
-            month={month}
-            day={day}
-            dow={dow}
-            activeId={activeId}
-            onCellClick={handleCellClick}
-            onRightClick={handleRightClick}
-            onHover={setHover}
-          />
-          <ControlPanel
-            activeId={activeId}
-            onRotate={() => setRotation(r => ((r + 1) % 4) as Rot)}
-            onFlip={() => setFlipped(f => !f)}
-            onCancel={() => setActiveId(null)}
-          />
+      {/* ── Mobile layout (< md) ───────────────────────────────── */}
+      <div className="flex flex-col items-center gap-4 md:hidden w-full">
+        {/* Board — scaled to fit the viewport */}
+        <div style={{ width: scaledW, height: scaledH, flexShrink: 0, overflow: "hidden" }}>
+          <div style={{ width: BOARD_OUTER_WIDTH, transformOrigin: "top left", transform: `scale(${boardScale})` }}>
+            <Board {...boardProps} />
+          </div>
         </div>
 
-        <PieceTray
-          placements={placements}
-          activeId={activeId}
-          solving={solving}
-          onSelectPiece={handleSelectPiece}
-          onReset={handleReset}
-          onSolve={() => { setActiveId(null); setShowConfirm(true); }}
-        />
+        {/* Piece tray — horizontal scrollable row */}
+        <PieceTray {...trayProps} horizontal style={{ width: scaledW }} />
+
+        {/* Control panel — full width of board */}
+        <ControlPanel {...panelProps} style={{ width: scaledW }} />
+      </div>
+
+      {/* ── Desktop layout (≥ md) ──────────────────────────────── */}
+      <div className="hidden md:flex gap-6 items-start">
+        <div className="flex flex-col gap-4 items-start">
+          <Board {...boardProps} />
+          <ControlPanel {...panelProps} />
+        </div>
+        <PieceTray {...trayProps} />
       </div>
 
       {showConfirm && (

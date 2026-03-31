@@ -7,15 +7,16 @@ interface ControlPanelProps {
   onRotate: () => void;
   onFlip:   () => void;
   onCancel: () => void;
+  style?:   React.CSSProperties;
 }
 
 const HOW_TO_PLAY = [
-  { icon: "①", label: "Click a piece",      sub: "in the tray to select it" },
-  { icon: "②", label: "Click the board",    sub: "to place it — green = valid" },
-  { icon: "③", label: "Right-click a piece", sub: "on the board to remove it" },
+  { icon: "①", label: "Select a piece",    sub: "from the tray" },
+  { icon: "②", label: "Place it",          sub: "on the board — green = valid" },
+  { icon: "③", label: "Right-click / long-press", sub: "a piece on the board to remove" },
 ];
 
-export default function ControlPanel({ activeId, onRotate, onFlip, onCancel }: ControlPanelProps) {
+export default function ControlPanel({ activeId, onRotate, onFlip, onCancel, style }: ControlPanelProps) {
   const transforms = [
     { label: "Rotate 90°", icon: "↻", key: "R",   action: onRotate },
     { label: "Flip",       icon: "⇄", key: "F",   action: onFlip   },
@@ -23,16 +24,19 @@ export default function ControlPanel({ activeId, onRotate, onFlip, onCancel }: C
   ];
 
   return (
-    <div style={{
-      display: "flex", gap: 0, alignItems: "stretch",
-      width: BOARD_OUTER_WIDTH,
-      background: "linear-gradient(135deg, #fdf8f0 0%, #f5ead8 100%)",
-      border: "1.5px solid rgba(139,105,20,0.22)",
-      borderRadius: 16,
-      boxShadow: "0 2px 12px rgba(100,70,10,0.08)",
-      overflow: "hidden",
-    }}>
-      {/* Left: how to play */}
+    <div
+      className="flex flex-col md:flex-row"
+      style={{
+        width: BOARD_OUTER_WIDTH,
+        background: "linear-gradient(135deg, #fdf8f0 0%, #f5ead8 100%)",
+        border: "1.5px solid rgba(139,105,20,0.22)",
+        borderRadius: 16,
+        boxShadow: "0 2px 12px rgba(100,70,10,0.08)",
+        overflow: "hidden",
+        ...style,
+      }}
+    >
+      {/* How to play */}
       <div style={{ flex: 1, padding: "14px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
         <p style={{ fontSize: 10, fontWeight: 700, color: "#a07830", letterSpacing: "0.1em", textTransform: "uppercase", margin: 0 }}>
           How to play
@@ -46,11 +50,14 @@ export default function ControlPanel({ activeId, onRotate, onFlip, onCancel }: C
         ))}
       </div>
 
-      {/* Divider */}
-      <div style={{ width: 1, background: "rgba(139,105,20,0.15)", margin: "12px 0" }} />
+      {/* Divider — horizontal on mobile, vertical on desktop */}
+      <div
+        className="h-px md:h-auto md:w-px"
+        style={{ background: "rgba(139,105,20,0.15)", margin: "0 0 0 0" }}
+      />
 
-      {/* Right: transform controls */}
-      <div style={{ padding: "14px 20px", display: "flex", flexDirection: "column", gap: 10, minWidth: 200 }}>
+      {/* Transform controls */}
+      <div style={{ padding: "14px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
         <p style={{ fontSize: 10, fontWeight: 700, color: "#a07830", letterSpacing: "0.1em", textTransform: "uppercase", margin: 0 }}>
           Transform {activeId ? <span style={{ color: "#c8972a" }}>· piece {activeId}</span> : null}
         </p>
@@ -69,14 +76,19 @@ export default function ControlPanel({ activeId, onRotate, onFlip, onCancel }: C
             >
               <span style={{ fontSize: 16, width: 22, textAlign: "center", color: "#8b6914" }}>{icon}</span>
               <span style={{ fontSize: 12, fontWeight: 600, color: "#5c3d0a", flex: 1 }}>{label}</span>
-              <kbd style={{
-                fontSize: 10, fontWeight: 700,
-                padding: "2px 6px", borderRadius: 5,
-                background: activeId ? "rgba(139,105,20,0.15)" : "rgba(0,0,0,0.05)",
-                border: "1px solid rgba(139,105,20,0.25)",
-                color: "#7a5218", fontFamily: "monospace",
-                letterSpacing: "0.05em",
-              }}>{key}</kbd>
+              <kbd
+                className="hidden md:inline-flex"
+                style={{
+                  fontSize: 10, fontWeight: 700,
+                  padding: "2px 6px", borderRadius: 5,
+                  background: activeId ? "rgba(139,105,20,0.15)" : "rgba(0,0,0,0.05)",
+                  border: "1px solid rgba(139,105,20,0.25)",
+                  color: "#7a5218", fontFamily: "monospace",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                {key}
+              </kbd>
             </button>
           ))}
         </div>

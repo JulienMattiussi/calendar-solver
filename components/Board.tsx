@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { BOARD_ROWS, CELL_PX, BOARD_PAD, GRID_GAP, BOARD_BORDER } from "@/lib/board";
 import { PIECES, absoluteCells, roundedRect, type RC } from "@/lib/pieces";
 import type { Placement } from "@/lib/solver";
@@ -23,6 +24,7 @@ export default function Board({
   month, day, dow, activeId,
   onCellClick, onRightClick, onHover,
 }: BoardProps) {
+  const uid  = useId().replace(/:/g, "");
   const svgW = BOARD_PAD * 2 + 7 * CELL_PX + 6 * GRID_GAP;
   const svgH = BOARD_PAD * 2 + 8 * CELL_PX + 7 * GRID_GAP;
   const ext  = GRID_GAP / 2;
@@ -45,10 +47,10 @@ export default function Board({
       {/* SVG piece overlay — renders placed pieces as solid connected shapes */}
       <svg
         width={svgW} height={svgH}
-        style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none" }}
+        style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 1 }}
       >
         <defs>
-          <filter id="piece-shadow" x="-10%" y="-10%" width="120%" height="120%">
+          <filter id={`piece-shadow-${uid}`} x="-10%" y="-10%" width="120%" height="120%">
             <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="rgba(0,0,0,0.35)" />
           </filter>
         </defs>
@@ -57,7 +59,7 @@ export default function Board({
           const cells   = absoluteCells(piece.cells, pl.rot, pl.flipped, pl.row, pl.col);
           const cellSet = new Set(cells.map(([r, c]) => `${r},${c}`));
           return (
-            <g key={pl.pieceId} filter="url(#piece-shadow)">
+            <g key={pl.pieceId} filter={`url(#piece-shadow-${uid})`}>
               {cells.map(([r, c]) => {
                 const hasT = cellSet.has(`${r-1},${c}`);
                 const hasB = cellSet.has(`${r+1},${c}`);

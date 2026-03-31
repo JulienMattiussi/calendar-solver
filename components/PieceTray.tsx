@@ -10,15 +10,11 @@ interface PieceTrayProps {
   onSelectPiece: (id: string | null) => void;
   onReset:       () => void;
   onSolve:       () => void;
-  horizontal?:   boolean;
-  style?:        React.CSSProperties;
 }
 
 export default function PieceTray({
   placements, activeId, solving,
   onSelectPiece, onReset, onSolve,
-  horizontal = false,
-  style,
 }: PieceTrayProps) {
   const placedIds = new Set(placements.map(p => p.pieceId));
 
@@ -29,7 +25,7 @@ export default function PieceTray({
     const maxC = Math.max(...piece.cells.map(c => c[1]));
     const svgW = (maxC + 1) * TRAY_SZ;
     const svgH = (maxR + 1) * TRAY_SZ;
-    const btnW = Math.max(svgW + 20, horizontal ? 52 : 80);
+    const btnW = Math.max(svgW + 20, 60);
     const btnH = Math.max(svgH + 16, 44);
 
     return (
@@ -64,7 +60,7 @@ export default function PieceTray({
         <svg
           width={svgW} height={svgH}
           viewBox={`0 0 ${svgW} ${svgH}`}
-          style={{ position: "absolute", left: horizontal ? Math.max((btnW - svgW) / 2, 4) : 7, top: 8 }}
+          style={{ position: "absolute", left: Math.max((btnW - svgW) / 2, 4), top: 8 }}
         >
           {piece.cells.map(([r, c], i) => (
             <rect key={i}
@@ -88,87 +84,49 @@ export default function PieceTray({
     );
   });
 
-  if (horizontal) {
-    return (
-      <div style={style} className="flex flex-col gap-2">
-        <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest">
-          Pieces ({placements.length}/10)
-        </p>
-        {/* Scrollable piece row */}
-        <div
-          className="flex flex-row gap-2 overflow-x-auto pb-1"
-          style={{ scrollbarWidth: "none" }}
-        >
-          {pieces}
-        </div>
-        {/* Action buttons side by side */}
-        <div className="flex gap-2">
-          <button
-            onClick={onReset}
-            style={{
-              flex: 1, padding: "6px 0", borderRadius: 8, fontSize: 11, fontWeight: 600,
-              background: "rgba(139,105,20,0.07)", border: "1px solid rgba(139,105,20,0.2)",
-              color: "#7a5218", cursor: "pointer",
-            }}
-          >
-            Reset all
-          </button>
-          <button
-            onClick={onSolve}
-            disabled={solving}
-            style={{
-              flex: 2, padding: "8px 0", borderRadius: 8, fontSize: 12, fontWeight: 700,
-              background: solving
-                ? "rgba(139,105,20,0.1)"
-                : "linear-gradient(135deg, #c8972a 0%, #a07020 100%)",
-              border: "none", color: solving ? "#a08050" : "#fff",
-              cursor: solving ? "default" : "pointer",
-              boxShadow: solving ? "none" : "0 2px 8px rgba(139,105,20,0.35)",
-              letterSpacing: "0.04em",
-              transition: "all 0.15s",
-            }}
-          >
-            {solving ? "Solving…" : "✦ Solve"}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Vertical (desktop) layout
   return (
     <div className="flex flex-col gap-2 pt-1">
       <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest mb-1">
         Pieces ({placements.length}/10)
       </p>
-      {pieces}
-      <button
-        onClick={onReset}
-        style={{
-          marginTop: 4, padding: "6px 0", borderRadius: 8, fontSize: 11, fontWeight: 600,
-          background: "rgba(139,105,20,0.07)", border: "1px solid rgba(139,105,20,0.2)",
-          color: "#7a5218", cursor: "pointer",
-        }}
+
+      {/* Horizontal scroll on mobile, vertical stack on desktop */}
+      <div
+        className="flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-x-visible pb-1 md:pb-0"
+        style={{ scrollbarWidth: "none" }}
       >
-        Reset all
-      </button>
-      <button
-        onClick={onSolve}
-        disabled={solving}
-        style={{
-          marginTop: 2, padding: "8px 0", borderRadius: 8, fontSize: 12, fontWeight: 700,
-          background: solving
-            ? "rgba(139,105,20,0.1)"
-            : "linear-gradient(135deg, #c8972a 0%, #a07020 100%)",
-          border: "none", color: solving ? "#a08050" : "#fff",
-          cursor: solving ? "default" : "pointer",
-          boxShadow: solving ? "none" : "0 2px 8px rgba(139,105,20,0.35)",
-          letterSpacing: "0.04em",
-          transition: "all 0.15s",
-        }}
-      >
-        {solving ? "Solving…" : "✦ Solve"}
-      </button>
+        {pieces}
+      </div>
+
+      <div className="flex gap-2 mt-1">
+        <button
+          onClick={onReset}
+          style={{
+            flex: 1, padding: "6px 0", borderRadius: 8, fontSize: 11, fontWeight: 600,
+            background: "rgba(139,105,20,0.07)", border: "1px solid rgba(139,105,20,0.2)",
+            color: "#7a5218", cursor: "pointer",
+          }}
+        >
+          Reset all
+        </button>
+        <button
+          onClick={onSolve}
+          disabled={solving}
+          style={{
+            flex: 2, padding: "8px 0", borderRadius: 8, fontSize: 12, fontWeight: 700,
+            background: solving
+              ? "rgba(139,105,20,0.1)"
+              : "linear-gradient(135deg, #c8972a 0%, #a07020 100%)",
+            border: "none", color: solving ? "#a08050" : "#fff",
+            cursor: solving ? "default" : "pointer",
+            boxShadow: solving ? "none" : "0 2px 8px rgba(139,105,20,0.35)",
+            letterSpacing: "0.04em",
+            transition: "all 0.15s",
+          }}
+        >
+          {solving ? "Solving…" : "✦ Solve"}
+        </button>
+      </div>
     </div>
   );
 }

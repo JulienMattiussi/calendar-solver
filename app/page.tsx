@@ -28,8 +28,6 @@ export default function CalendarPuzzle() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [solving,     setSolving]     = useState(false);
 
-  // Scale the board to fit narrow viewports (mobile).
-  // Deduct 2 × p-4 (32px) from the viewport width as the main horizontal padding.
   const [boardScale, setBoardScale] = useState(1);
   useEffect(() => {
     const update = () =>
@@ -134,8 +132,8 @@ export default function CalendarPuzzle() {
     activeId,
     solving,
     onSelectPiece: handleSelectPiece,
-    onReset: handleReset,
-    onSolve: () => { setActiveId(null); setShowConfirm(true); },
+    onReset:  handleReset,
+    onSolve:  () => { setActiveId(null); setShowConfirm(true); },
   };
 
   const boardProps = {
@@ -153,7 +151,6 @@ export default function CalendarPuzzle() {
     onCancel: () => setActiveId(null),
   };
 
-  // Scaled board dimensions (only shrinks, never grows past natural size)
   const scaledW = Math.round(BOARD_OUTER_WIDTH  * boardScale);
   const scaledH = Math.round(BOARD_OUTER_HEIGHT * boardScale);
 
@@ -169,29 +166,29 @@ export default function CalendarPuzzle() {
         </div>
       )}
 
-      {/* ── Mobile layout (< md) ───────────────────────────────── */}
-      <div className="flex flex-col items-center gap-4 md:hidden w-full">
-        {/* Board — scaled to fit the viewport */}
-        <div style={{ width: scaledW, height: scaledH, flexShrink: 0, overflow: "hidden" }}>
+      {/* ── Unified layout — CSS Grid handles both mobile and desktop ── */}
+      <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-[auto_auto] items-start">
+
+        {/* Board — col 1 row 1, scaled to fit viewport on mobile */}
+        <div
+          className="md:col-start-1 md:row-start-1"
+          style={{ width: scaledW, height: scaledH, overflow: "hidden" }}
+        >
           <div style={{ width: BOARD_OUTER_WIDTH, transformOrigin: "top left", transform: `scale(${boardScale})` }}>
             <Board {...boardProps} />
           </div>
         </div>
 
-        {/* Piece tray — horizontal scrollable row */}
-        <PieceTray {...trayProps} horizontal style={{ width: scaledW }} />
-
-        {/* Control panel — full width of board */}
-        <ControlPanel {...panelProps} style={{ width: scaledW }} />
-      </div>
-
-      {/* ── Desktop layout (≥ md) ──────────────────────────────── */}
-      <div className="hidden md:flex gap-6 items-start">
-        <div className="flex flex-col gap-4 items-start">
-          <Board {...boardProps} />
-          <ControlPanel {...panelProps} />
+        {/* Piece tray — col 2 rows 1-2 on desktop, row 2 on mobile */}
+        <div className="md:col-start-2 md:row-start-1 md:row-span-2 min-w-0">
+          <PieceTray {...trayProps} />
         </div>
-        <PieceTray {...trayProps} />
+
+        {/* Control panel — col 1 row 2 on desktop, row 3 on mobile */}
+        <div className="md:col-start-1 md:row-start-2">
+          <ControlPanel {...panelProps} style={{ width: scaledW }} />
+        </div>
+
       </div>
 
       {showConfirm && (

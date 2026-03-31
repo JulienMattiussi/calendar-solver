@@ -8,13 +8,14 @@ interface PieceTrayProps {
   activeId:      string | null;
   solving:       boolean;
   onSelectPiece: (id: string | null) => void;
+  onRotate:      () => void;
   onReset:       () => void;
   onSolve:       () => void;
 }
 
 export default function PieceTray({
   placements, activeId, solving,
-  onSelectPiece, onReset, onSolve,
+  onSelectPiece, onRotate, onReset, onSolve,
 }: PieceTrayProps) {
   const placedIds = new Set(placements.map(p => p.pieceId));
 
@@ -34,7 +35,7 @@ export default function PieceTray({
         disabled={isPlaced}
         onClick={() => {
           if (isPlaced) return;
-          onSelectPiece(isActive ? null : piece.id);
+          if (isActive) { onRotate(); } else { onSelectPiece(piece.id); }
         }}
         title={isPlaced ? "Placed" : `Select piece ${piece.id}`}
         style={{
@@ -98,7 +99,7 @@ export default function PieceTray({
         {pieces}
       </div>
 
-      <div className="flex gap-2 mt-1">
+      <div className="flex gap-2 mt-1 md:hidden">
         <button
           onClick={onReset}
           style={{

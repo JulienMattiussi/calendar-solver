@@ -2,10 +2,11 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 
-import Board        from "@/components/Board";
-import PieceTray    from "@/components/PieceTray";
-import ControlPanel from "@/components/ControlPanel";
-import ConfirmModal from "@/components/ConfirmModal";
+import Board           from "@/components/Board";
+import PieceTray       from "@/components/PieceTray";
+import ControlPanel    from "@/components/ControlPanel";
+import FloatingControls from "@/components/FloatingControls";
+import ConfirmModal    from "@/components/ConfirmModal";
 
 import {
   BOARD_ROWS, MONTHS, DAYS_DOW, TOTAL_BOARD_CELLS, getDefaultDate,
@@ -32,7 +33,7 @@ export default function CalendarPuzzle() {
   const [boardScale, setBoardScale] = useState(1);
   useEffect(() => {
     const update = () =>
-      setBoardScale(Math.min(1, (window.innerWidth - 32) / BOARD_OUTER_WIDTH));
+      setBoardScale(Math.min(1, (document.documentElement.clientWidth - 40) / BOARD_OUTER_WIDTH));
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
@@ -160,6 +161,7 @@ export default function CalendarPuzzle() {
     activeId,
     solving,
     onSelectPiece: handleSelectPiece,
+    onRotate: () => setRotation(r => ((r + 1) % 4) as Rot),
     onReset:  handleReset,
     onSolve:  () => { setActiveId(null); setShowConfirm(true); },
   };
@@ -170,6 +172,10 @@ export default function CalendarPuzzle() {
     onCellClick: handleCellClick,
     onRightClick: handleRightClick,
     onHover: setHover,
+    onLongPress: (row: number, col: number) => {
+      const pieceId = coverage.get(`${row},${col}`);
+      if (pieceId && !removingIds.has(pieceId)) removeWithAnimation([pieceId]);
+    },
   };
 
   const panelProps = {
@@ -199,21 +205,53 @@ export default function CalendarPuzzle() {
 
         {/* Board — col 1 row 1, scaled to fit viewport on mobile */}
         <div
-          className="md:col-start-1 md:row-start-1"
+          className="md:col-start-1 md:row-start-1 relative"
           style={{ width: scaledW, height: scaledH, overflow: "hidden" }}
         >
           <div style={{ width: BOARD_OUTER_WIDTH, transformOrigin: "top left", transform: `scale(${boardScale})` }}>
             <Board {...boardProps} />
           </div>
+          <FloatingControls {...panelProps} />
         </div>
 
-        {/* Piece tray — col 2 rows 1-2 on desktop, row 2 on mobile */}
-        <div className="md:col-start-2 md:row-start-1 md:row-span-2 min-w-0">
+        {/* Piece tray — col 2 rows 1-3 on desktop, row 2 on mobile */}
+        <div className="md:col-start-2 md:row-start-1 md:row-span-3 min-w-0">
           <PieceTray {...trayProps} />
         </div>
 
-        {/* Control panel — col 1 row 2 on desktop, row 3 on mobile */}
-        <div className="md:col-start-1 md:row-start-2">
+        {/* Reset / Solve — desktop only, col 1 row 2 (above instructions) */}
+        <div className="hidden md:flex gap-2 md:col-start-1 md:row-start-2" style={{ width: scaledW }}>
+          <button
+            onClick={trayProps.onReset}
+            style={{
+              flex: 1, padding: "6px 0", borderRadius: 8, fontSize: 11, fontWeight: 600,
+              background: "rgba(139,105,20,0.07)", border: "1px solid rgba(139,105,20,0.2)",
+              color: "#7a5218", cursor: "pointer",
+            }}
+          >
+            Reset all
+          </button>
+          <button
+            onClick={trayProps.onSolve}
+            disabled={solving}
+            style={{
+              flex: 2, padding: "8px 0", borderRadius: 8, fontSize: 12, fontWeight: 700,
+              background: solving
+                ? "rgba(139,105,20,0.1)"
+                : "linear-gradient(135deg, #c8972a 0%, #a07020 100%)",
+              border: "none", color: solving ? "#a08050" : "#fff",
+              cursor: solving ? "default" : "pointer",
+              boxShadow: solving ? "none" : "0 2px 8px rgba(139,105,20,0.35)",
+              letterSpacing: "0.04em",
+              transition: "all 0.15s",
+            }}
+          >
+            {solving ? "Solving…" : "✦ Solve"}
+          </button>
+        </div>
+
+        {/* Control panel — col 1 row 3 on desktop, row 3 on mobile */}
+        <div className="md:col-start-1 md:row-start-3">
           <ControlPanel {...panelProps} style={{ width: scaledW }} />
         </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useRef, useState, useCallback } from "react";
 import { BOARD_ROWS, CELL_PX, BOARD_PAD, GRID_GAP, BOARD_BORDER } from "@/lib/board";
 import { PIECES, absoluteCells, roundedRect, type RC } from "@/lib/pieces";
 import type { Placement } from "@/lib/solver";
@@ -18,18 +18,84 @@ interface BoardProps {
   onCellClick:  (row: number, col: number) => void;
   onRightClick: (e: React.MouseEvent, row: number, col: number) => void;
   onHover:      (cell: RC | null) => void;
+  onLongPress:  (row: number, col: number) => void;
+}
+
+/** Walk up the DOM from `el` to find the nearest element with data-row / data-col. */
+function cellFromPoint(x: number, y: number): [number, number] | null {
+  let el = document.elementFromPoint(x, y);
+  while (el) {
+    const r = (el as HTMLElement).dataset?.row;
+    const c = (el as HTMLElement).dataset?.col;
+    if (r !== undefined && c !== undefined) return [parseInt(r), parseInt(c)];
+    el = el.parentElement;
+  }
+  return null;
 }
 
 export default function Board({
   placements, removingIds, coverage, preview, previewValid,
   month, day, dow, activeId,
-  onCellClick, onRightClick, onHover,
+  onCellClick, onRightClick, onHover, onLongPress,
 }: BoardProps) {
   const uid  = useId().replace(/:/g, "");
   const svgW = BOARD_PAD * 2 + 7 * CELL_PX + 6 * GRID_GAP;
   const svgH = BOARD_PAD * 2 + 8 * CELL_PX + 7 * GRID_GAP;
   const ext  = GRID_GAP / 2;
   const R    = 5;
+
+  const [pressingCell, setPressingCell] = useState<{ row: number; col: number } | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const pressingPieceId = pressingCell
+    ? coverage.get(`${pressingCell.row},${pressingCell.col}`)
+    : undefined;
+
+  const cancelLongPress = useCallback(() => {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+    setPressingCell(null);
+  }, []);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    const cell = cellFromPoint(touch.clientX, touch.clientY);
+    if (!cell) return;
+    const [row, col] = cell;
+    if (activeId) {
+      onHover([row, col]);
+    } else {
+      const pieceId = coverage.get(`${row},${col}`);
+      if (pieceId) {
+        setPressingCell({ row, col });
+        longPressTimer.current = setTimeout(() => {
+          setPressingCell(null);
+          onLongPress(row, col);
+        }, 450);
+      }
+    }
+  }, [activeId, coverage, onHover, onLongPress]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    const cell = cellFromPoint(touch.clientX, touch.clientY);
+    if (activeId) {
+      if (cell) onHover([cell[0], cell[1]]);
+    } else if (pressingCell) {
+      if (!cell || cell[0] !== pressingCell.row || cell[1] !== pressingCell.col) {
+        cancelLongPress();
+      }
+    }
+  }, [activeId, pressingCell, onHover, cancelLongPress]);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    cancelLongPress();
+    if (!activeId) return;               // date-cell taps handled by button onClick
+    e.preventDefault();                  // suppress subsequent click event
+    const touch = e.changedTouches[0];
+    const cell = cellFromPoint(touch.clientX, touch.clientY);
+    if (cell) onCellClick(cell[0], cell[1]);
+    onHover(null);
+  }, [activeId, onCellClick, onHover, cancelLongPress]);
 
   const isDateCell = (label: string) => label === month || label === day || label === dow;
 
@@ -42,10 +108,16 @@ export default function Board({
         border: `${BOARD_BORDER}px solid #8b6914`,
         boxShadow: "0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.3)",
         cursor: activeId ? "crosshair" : "default",
+        touchAction: activeId ? "none" : "auto",   // prevent scroll while placing
+        userSelect: "none",
       }}
       onMouseLeave={() => onHover(null)}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={cancelLongPress}
     >
-      {/* SVG piece overlay — renders placed pieces as solid connected shapes */}
+      {/* SVG piece overlay */}
       <svg
         width={svgW} height={svgH}
         style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 1 }}
@@ -59,6 +131,7 @@ export default function Board({
           const piece   = PIECES.find(p => p.id === pl.pieceId)!;
           const cells   = absoluteCells(piece.cells, pl.rot, pl.flipped, pl.row, pl.col);
           const cellSet = new Set(cells.map(([r, c]) => `${r},${c}`));
+          const isPressing = pressingPieceId === pl.pieceId;
           return (
             <g
               key={pl.pieceId}
@@ -66,28 +139,31 @@ export default function Board({
               style={{ animation: removingIds.has(pl.pieceId) ? "piece-out 0.3s ease-in forwards" : "piece-in 0.3s cubic-bezier(0.2,0.8,0.4,1)" }}
               filter={`url(#piece-shadow-${uid})`}
             >
-              {cells.map(([r, c]) => {
-                const hasT = cellSet.has(`${r-1},${c}`);
-                const hasB = cellSet.has(`${r+1},${c}`);
-                const hasL = cellSet.has(`${r},${c-1}`);
-                const hasR = cellSet.has(`${r},${c+1}`);
-                const x = BOARD_PAD + c * (CELL_PX + GRID_GAP) - (hasL ? ext : 0);
-                const y = BOARD_PAD + r * (CELL_PX + GRID_GAP) - (hasT ? ext : 0);
-                const w = CELL_PX + (hasL ? ext : 0) + (hasR ? ext : 0);
-                const h = CELL_PX + (hasT ? ext : 0) + (hasB ? ext : 0);
-                return (
-                  <path
-                    key={`${r},${c}`}
-                    d={roundedRect(x, y, w, h,
-                      !hasT && !hasL ? R : 0,
-                      !hasT && !hasR ? R : 0,
-                      !hasB && !hasR ? R : 0,
-                      !hasB && !hasL ? R : 0,
-                    )}
-                    fill={piece.color}
-                  />
-                );
-              })}
+              {/* Inner group for long-press dimming — isolated from entrance animation */}
+              <g style={{ opacity: isPressing ? 0.45 : 1, transition: "opacity 0.1s" }}>
+                {cells.map(([r, c]) => {
+                  const hasT = cellSet.has(`${r-1},${c}`);
+                  const hasB = cellSet.has(`${r+1},${c}`);
+                  const hasL = cellSet.has(`${r},${c-1}`);
+                  const hasR = cellSet.has(`${r},${c+1}`);
+                  const x = BOARD_PAD + c * (CELL_PX + GRID_GAP) - (hasL ? ext : 0);
+                  const y = BOARD_PAD + r * (CELL_PX + GRID_GAP) - (hasT ? ext : 0);
+                  const w = CELL_PX + (hasL ? ext : 0) + (hasR ? ext : 0);
+                  const h = CELL_PX + (hasT ? ext : 0) + (hasB ? ext : 0);
+                  return (
+                    <path
+                      key={`${r},${c}`}
+                      d={roundedRect(x, y, w, h,
+                        !hasT && !hasL ? R : 0,
+                        !hasT && !hasR ? R : 0,
+                        !hasB && !hasR ? R : 0,
+                        !hasB && !hasL ? R : 0,
+                      )}
+                      fill={piece.color}
+                    />
+                  );
+                })}
+              </g>
             </g>
           );
         })}
@@ -128,6 +204,8 @@ export default function Board({
             return (
               <button
                 key={`${ri}-${ci}`}
+                data-row={ri}
+                data-col={ci}
                 onClick={() => onCellClick(ri, ci)}
                 onContextMenu={(e) => onRightClick(e, ri, ci)}
                 onMouseEnter={() => onHover([ri, ci])}

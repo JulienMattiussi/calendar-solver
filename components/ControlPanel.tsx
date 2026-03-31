@@ -10,10 +10,16 @@ interface ControlPanelProps {
   style?:   React.CSSProperties;
 }
 
-const HOW_TO_PLAY = [
-  { icon: "①", label: "Select a piece",    sub: "from the tray" },
-  { icon: "②", label: "Place it",          sub: "on the board — green = valid" },
-  { icon: "③", label: "Right-click / long-press", sub: "a piece on the board to remove" },
+const HOW_TO_PLAY_DESKTOP = [
+  { icon: "①", label: "Select",      sub: "a piece from the tray" },
+  { icon: "②", label: "Hover",       sub: "to preview · click to place" },
+  { icon: "③", label: "Right-click", sub: "a placed piece to remove" },
+];
+
+const HOW_TO_PLAY_MOBILE = [
+  { icon: "①", label: "Tap to select",     sub: "from the tray · tap again to rotate" },
+  { icon: "②", label: "Drag to preview",   sub: "tap to place · green = valid" },
+  { icon: "③", label: "Hold a piece",      sub: "on the board to remove it" },
 ];
 
 export default function ControlPanel({ activeId, onRotate, onFlip, onCancel, style }: ControlPanelProps) {
@@ -41,23 +47,35 @@ export default function ControlPanel({ activeId, onRotate, onFlip, onCancel, sty
         <p style={{ fontSize: 10, fontWeight: 700, color: "#a07830", letterSpacing: "0.1em", textTransform: "uppercase", margin: 0 }}>
           How to play
         </p>
-        {HOW_TO_PLAY.map(({ icon, label, sub }) => (
-          <div key={label} style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-            <span style={{ fontSize: 13, color: "#c8972a", flexShrink: 0 }}>{icon}</span>
-            <span style={{ fontSize: 12, color: "#5c3d0a", fontWeight: 600 }}>{label}</span>
-            <span style={{ fontSize: 11, color: "#a08050" }}>{sub}</span>
-          </div>
-        ))}
+        {/* Mobile instructions */}
+        <div className="md:hidden flex flex-col gap-2">
+          {HOW_TO_PLAY_MOBILE.map(({ icon, label, sub }) => (
+            <div key={label} style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+              <span style={{ fontSize: 13, color: "#c8972a", flexShrink: 0 }}>{icon}</span>
+              <span style={{ fontSize: 12, color: "#5c3d0a", fontWeight: 600 }}>{label}</span>
+              <span style={{ fontSize: 11, color: "#a08050" }}>{sub}</span>
+            </div>
+          ))}
+        </div>
+        {/* Desktop instructions */}
+        <div className="hidden md:flex flex-col gap-2">
+          {HOW_TO_PLAY_DESKTOP.map(({ icon, label, sub }) => (
+            <div key={label} style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+              <span style={{ fontSize: 13, color: "#c8972a", flexShrink: 0 }}>{icon}</span>
+              <span style={{ fontSize: 12, color: "#5c3d0a", fontWeight: 600 }}>{label}</span>
+              <span style={{ fontSize: 11, color: "#a08050" }}>{sub}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Divider — horizontal on mobile, vertical on desktop */}
-      <div
-        className="h-px md:h-auto md:w-px"
-        style={{ background: "rgba(139,105,20,0.15)", margin: "0 0 0 0" }}
+      {/* Divider + Transform controls — desktop only (mobile uses FloatingControls) */}
+      <div className="hidden md:block h-px md:h-auto md:w-px"
+        style={{ background: "rgba(139,105,20,0.15)" }}
       />
 
       {/* Transform controls */}
-      <div style={{ padding: "14px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
+      <div className="hidden md:flex" style={{ padding: "14px 20px", flexDirection: "column", gap: 10 }}>
         <p style={{ fontSize: 10, fontWeight: 700, color: "#a07830", letterSpacing: "0.1em", textTransform: "uppercase", margin: 0 }}>
           Transform {activeId ? <span style={{ color: "#c8972a" }}>· piece {activeId}</span> : null}
         </p>

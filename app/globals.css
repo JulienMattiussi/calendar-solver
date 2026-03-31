@@ -24,3 +24,26 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Piece placement / removal animations.
+   Scale from the edge that faces the tray — no SVG overflow needed.
+   Desktop: tray is on the right  → origin: right center (grows left→right from tray side)
+   Mobile:  tray is below         → origin: center bottom (grows bottom→top from tray side) */
+.piece-group {
+  transform-box:    fill-box;
+  transform-origin: right center;
+}
+@media (max-width: 767px) {
+  .piece-group {
+    transform-origin: center bottom;
+  }
+}
+
+@keyframes piece-in {
+  from { opacity: 0; transform: scale(0); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes piece-out {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0); }
+}

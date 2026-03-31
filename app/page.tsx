@@ -23,10 +23,11 @@ export default function CalendarPuzzle() {
   const [activeId,    setActiveId]    = useState<string | null>(null);
   const [rotation,    setRotation]    = useState<Rot>(0);
   const [flipped,     setFlipped]     = useState(false);
-  const [placements,  setPlacements]  = useState<Placement[]>([]);
-  const [hover,       setHover]       = useState<RC | null>(null);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [solving,     setSolving]     = useState(false);
+  const [placements,   setPlacements]  = useState<Placement[]>([]);
+  const [removingIds,  setRemovingIds] = useState<Set<string>>(new Set());
+  const [hover,        setHover]       = useState<RC | null>(null);
+  const [showConfirm,  setShowConfirm] = useState(false);
+  const [solving,      setSolving]     = useState(false);
 
   const [boardScale, setBoardScale] = useState(1);
   useEffect(() => {
@@ -96,6 +97,17 @@ export default function CalendarPuzzle() {
     return () => window.removeEventListener("keydown", fn);
   }, [activeId]);
 
+  // Mouse-wheel rotation when a piece is active
+  useEffect(() => {
+    const fn = (e: WheelEvent) => {
+      if (!activeId) return;
+      e.preventDefault();
+      setRotation(r => ((r + (e.deltaY > 0 ? 1 : 3)) % 4) as Rot);
+    };
+    window.addEventListener("wheel", fn, { passive: false });
+    return () => window.removeEventListener("wheel", fn);
+  }, [activeId]);
+
   const handleCellClick = useCallback((row: number, col: number) => {
     const label = BOARD_ROWS[row]?.[col];
     if (!label) return;
@@ -110,11 +122,25 @@ export default function CalendarPuzzle() {
     }
   }, [activeId, activePiece, previewValid, rotation, flipped]);
 
+  const ANIM_MS = 300;
+
+  const removeWithAnimation = useCallback((ids: string[]) => {
+    setRemovingIds(prev => new Set([...prev, ...ids]));
+    setTimeout(() => {
+      setPlacements(prev => prev.filter(p => !ids.includes(p.pieceId)));
+      setRemovingIds(prev => {
+        const next = new Set(prev);
+        ids.forEach(id => next.delete(id));
+        return next;
+      });
+    }, ANIM_MS);
+  }, []);
+
   const handleRightClick = useCallback((e: React.MouseEvent, row: number, col: number) => {
     e.preventDefault();
     const pieceId = coverage.get(`${row},${col}`);
-    if (pieceId) setPlacements(prev => prev.filter(p => p.pieceId !== pieceId));
-  }, [coverage]);
+    if (pieceId && !removingIds.has(pieceId)) removeWithAnimation([pieceId]);
+  }, [coverage, removingIds, removeWithAnimation]);
 
   const handleSelectPiece = useCallback((id: string | null) => {
     setActiveId(id);
@@ -123,9 +149,11 @@ export default function CalendarPuzzle() {
   }, []);
 
   const handleReset = useCallback(() => {
-    setPlacements([]);
+    const ids = placements.map(p => p.pieceId);
     setActiveId(null);
-  }, []);
+    if (ids.length === 0) return;
+    removeWithAnimation(ids);
+  }, [placements, removeWithAnimation]);
 
   const trayProps = {
     placements,
@@ -137,7 +165,7 @@ export default function CalendarPuzzle() {
   };
 
   const boardProps = {
-    placements, coverage, preview, previewValid,
+    placements, removingIds, coverage, preview, previewValid,
     month, day, dow, activeId,
     onCellClick: handleCellClick,
     onRightClick: handleRightClick,

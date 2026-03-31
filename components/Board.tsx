@@ -7,6 +7,7 @@ import type { Placement } from "@/lib/solver";
 
 interface BoardProps {
   placements:   Placement[];
+  removingIds:  Set<string>;
   coverage:     Map<string, string>;
   preview:      RC[];
   previewValid: boolean;
@@ -20,7 +21,7 @@ interface BoardProps {
 }
 
 export default function Board({
-  placements, coverage, preview, previewValid,
+  placements, removingIds, coverage, preview, previewValid,
   month, day, dow, activeId,
   onCellClick, onRightClick, onHover,
 }: BoardProps) {
@@ -59,7 +60,12 @@ export default function Board({
           const cells   = absoluteCells(piece.cells, pl.rot, pl.flipped, pl.row, pl.col);
           const cellSet = new Set(cells.map(([r, c]) => `${r},${c}`));
           return (
-            <g key={pl.pieceId} filter={`url(#piece-shadow-${uid})`}>
+            <g
+              key={pl.pieceId}
+              className="piece-group"
+              style={{ animation: removingIds.has(pl.pieceId) ? "piece-out 0.3s ease-in forwards" : "piece-in 0.3s cubic-bezier(0.2,0.8,0.4,1)" }}
+              filter={`url(#piece-shadow-${uid})`}
+            >
               {cells.map(([r, c]) => {
                 const hasT = cellSet.has(`${r-1},${c}`);
                 const hasB = cellSet.has(`${r+1},${c}`);

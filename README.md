@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# A-Puzzle-A-Day
 
-## Getting Started
+> A daily calendar puzzle — fit all 10 pieces on the board to reveal today's month, day, and weekday.
 
-First, run the development server:
+![Preview](https://calendar-solver.vercel.app/preview.png)
+
+---
+
+## How to play
+
+1. **Select a piece** from the tray on the right (or below on mobile)
+2. **Hover** over the board — green cells show a valid placement
+3. **Click** to place the piece
+4. Press **R** to rotate, **F** to flip, **Esc** to cancel selection
+5. **Right-click** (or long-press on mobile) a placed piece to remove it
+6. Hit **✦ Solve** to let the solver find a solution automatically
+
+The three cells left uncovered at the end should spell out the current date.
+
+---
+
+## Stack
+
+- [Next.js](https://nextjs.org) (App Router)
+- [Tailwind CSS v4](https://tailwindcss.com)
+- Backtracking constraint solver (pure TypeScript, runs in ~50 ms)
+
+---
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project structure
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+app/
+  page.tsx              # Main game orchestrator
+  layout.tsx            # Root layout + metadata
+  icon.tsx              # Favicon (generated PNG via next/og)
+  opengraph-image.tsx   # OG / social-preview image (1200×630)
+components/
+  Board.tsx             # Board grid + SVG piece overlay
+  PieceTray.tsx         # Piece selection tray (vertical / horizontal)
+  ControlPanel.tsx      # How-to-play + transform controls
+  ConfirmModal.tsx      # Solve confirmation dialog
+lib/
+  board.ts              # Board layout, constants, date helpers
+  pieces.ts             # Piece definitions, geometry transforms
+  solver.ts             # Backtracking solver
+```

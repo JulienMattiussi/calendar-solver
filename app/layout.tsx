@@ -14,7 +14,20 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "A-Puzzle-A-Day",
-  description: "A daily calendar puzzle — fit all pieces to reveal today's date.",
+  description: "Fit all 10 pieces on the board to reveal today's month, day, and weekday. A daily calendar puzzle.",
+  openGraph: {
+    title: "A-Puzzle-A-Day",
+    description: "Fit all 10 pieces on the board to reveal today's month, day, and weekday.",
+    type: "website",
+    url: "https://calendar-solver.vercel.app",
+    images: [{ url: "https://calendar-solver.vercel.app/preview.png", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "A-Puzzle-A-Day",
+    description: "Fit all 10 pieces on the board to reveal today's month, day, and weekday.",
+    images: ["https://calendar-solver.vercel.app/preview.png"],
+  },
 };
 
 export default function RootLayout({

@@ -1,5 +1,7 @@
 "use client";
 
+import { BOARD_OUTER_WIDTH } from "@/lib/board";
+
 interface ControlPanelProps {
   activeId: string | null;
   onRotate: () => void;
@@ -23,6 +25,7 @@ export default function ControlPanel({ activeId, onRotate, onFlip, onCancel }: C
   return (
     <div style={{
       display: "flex", gap: 0, alignItems: "stretch",
+      width: BOARD_OUTER_WIDTH,
       background: "linear-gradient(135deg, #fdf8f0 0%, #f5ead8 100%)",
       border: "1.5px solid rgba(139,105,20,0.22)",
       borderRadius: 16,

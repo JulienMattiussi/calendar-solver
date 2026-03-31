@@ -13,9 +13,11 @@ export const MONTHS   = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","
 export const DAYS_DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 export const TOTAL_BOARD_CELLS = BOARD_ROWS.flat().filter(Boolean).length; // 50
 
-export const CELL_PX   = 56;
-export const BOARD_PAD = 16; // p-4
-export const GRID_GAP  = 4;  // gap-1
+export const CELL_PX      = 56;
+export const BOARD_PAD    = 16; // p-4
+export const GRID_GAP     = 4;  // gap-1
+export const BOARD_BORDER = 6;
+export const BOARD_OUTER_WIDTH = 7 * CELL_PX + 6 * GRID_GAP + 2 * BOARD_PAD + 2 * BOARD_BORDER; // 460
 
 export function isValidCell(row: number, col: number): boolean {
   if (row < 0 || row >= BOARD_ROWS.length || col < 0 || col >= 7) return false;

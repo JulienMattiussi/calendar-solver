@@ -1,6 +1,6 @@
 "use client";
 
-import { BOARD_ROWS, CELL_PX, BOARD_PAD, GRID_GAP } from "@/lib/board";
+import { BOARD_ROWS, CELL_PX, BOARD_PAD, GRID_GAP, BOARD_BORDER } from "@/lib/board";
 import { PIECES, absoluteCells, roundedRect, type RC } from "@/lib/pieces";
 import type { Placement } from "@/lib/solver";
 
@@ -36,7 +36,7 @@ export default function Board({
       style={{
         position: "relative",
         background: "linear-gradient(135deg, #e8d5a3 0%, #d4b878 40%, #c9a84c 100%)",
-        border: "6px solid #8b6914",
+        border: `${BOARD_BORDER}px solid #8b6914`,
         boxShadow: "0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.3)",
         cursor: activeId ? "crosshair" : "default",
       }}

@@ -7,6 +7,7 @@ import {
   BOARD_PAD,
   GRID_GAP,
   BOARD_BORDER,
+  BOARD_OUTER_WIDTH,
 } from "@/lib/board";
 import { PIECES, absoluteCells, roundedRect, type RC } from "@/lib/pieces";
 import type { Placement } from "@/lib/solver";
@@ -27,7 +28,7 @@ interface BoardProps {
   onLongPress: (row: number, col: number) => void;
 }
 
-/** Shift the touch preview this many rows above the raw touch point so the piece is visible above the finger. */
+/** Shift the preview this many rows above the raw touch point so the piece is visible above the finger. */
 const TOUCH_ROW_OFFSET = -2;
 
 /** Walk up the DOM from `el` to find the nearest element with data-row / data-col. */
@@ -40,6 +41,29 @@ function cellFromPoint(x: number, y: number): [number, number] | null {
     el = el.parentElement;
   }
   return null;
+}
+
+/**
+ * Fallback for when the finger is below the grid (no data-row element found).
+ * Derives scale from the board's rendered width so no prop is needed.
+ */
+function cellFromPointFallback(
+  x: number,
+  y: number,
+  boardEl: HTMLElement,
+): [number, number] | null {
+  const rect = boardEl.getBoundingClientRect();
+  const scale = rect.width / BOARD_OUTER_WIDTH;
+  const col = Math.floor(
+    (x - rect.left - BOARD_PAD * scale) / ((CELL_PX + GRID_GAP) * scale),
+  );
+  const row = Math.floor(
+    (y - rect.top - BOARD_PAD * scale) / ((CELL_PX + GRID_GAP) * scale),
+  );
+  if (col < 0 || col >= 7) return null;
+  // Allow rows beyond the grid so the offset can pull the preview into the last rows
+  if (row < 0 || row > BOARD_ROWS.length + Math.abs(TOUCH_ROW_OFFSET) - 1) return null;
+  return [row, col];
 }
 
 export default function Board({
@@ -58,6 +82,7 @@ export default function Board({
   onLongPress,
 }: BoardProps) {
   const uid = useId().replace(/:/g, "");
+  const boardRef = useRef<HTMLDivElement>(null);
   const svgW = BOARD_PAD * 2 + 7 * CELL_PX + 6 * GRID_GAP;
   const svgH = BOARD_PAD * 2 + 8 * CELL_PX + 7 * GRID_GAP;
   const ext = GRID_GAP / 2;
@@ -73,6 +98,14 @@ export default function Board({
     ? coverage.get(`${pressingCell.row},${pressingCell.col}`)
     : undefined;
 
+  /** Resolve a touch coordinate to a board cell, with fallback for finger below grid. */
+  const resolveCell = useCallback(
+    (x: number, y: number) =>
+      cellFromPoint(x, y) ??
+      (boardRef.current ? cellFromPointFallback(x, y, boardRef.current) : null),
+    [],
+  );
+
   const cancelLongPress = useCallback(() => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
@@ -84,7 +117,7 @@ export default function Board({
   const handleTouchStart = useCallback(
     (e: React.TouchEvent) => {
       const touch = e.touches[0];
-      const cell = cellFromPoint(touch.clientX, touch.clientY);
+      const cell = resolveCell(touch.clientX, touch.clientY);
       if (!cell) return;
       const [row, col] = cell;
       if (activeId) {
@@ -106,7 +139,7 @@ export default function Board({
   const handleTouchMove = useCallback(
     (e: React.TouchEvent) => {
       const touch = e.touches[0];
-      const cell = cellFromPoint(touch.clientX, touch.clientY);
+      const cell = resolveCell(touch.clientX, touch.clientY);
       if (activeId) {
         if (cell) onHover([cell[0] + TOUCH_ROW_OFFSET, cell[1]]);
       } else if (pressingCell) {
@@ -128,7 +161,7 @@ export default function Board({
       if (!activeId) return; // date-cell taps handled by button onClick
       e.preventDefault(); // suppress subsequent click event
       const touch = e.changedTouches[0];
-      const cell = cellFromPoint(touch.clientX, touch.clientY);
+      const cell = resolveCell(touch.clientX, touch.clientY);
       if (cell) onCellClick(cell[0] + TOUCH_ROW_OFFSET, cell[1]);
       onHover(null);
     },
@@ -140,6 +173,7 @@ export default function Board({
 
   return (
     <div
+      ref={boardRef}
       className="rounded-2xl p-4"
       style={{
         position: "relative",

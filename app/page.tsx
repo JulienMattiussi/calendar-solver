@@ -5,7 +5,6 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import Board from "@/components/Board";
 import PieceTray from "@/components/PieceTray";
 import ControlPanel from "@/components/ControlPanel";
-import FloatingControls from "@/components/FloatingControls";
 import ConfirmModal from "@/components/ConfirmModal";
 
 import {
@@ -220,8 +219,12 @@ export default function CalendarPuzzle() {
     placements,
     activeId,
     solving,
+    rotation,
+    flipped,
     onSelectPiece: handleSelectPiece,
     onRotate: () => setRotation((r) => ((r + 1) % 4) as Rot),
+    onFlip: () => setFlipped((f) => !f),
+    onCancel: () => setActiveId(null),
     onReset: handleReset,
     onSolve: () => {
       setActiveId(null);
@@ -286,7 +289,6 @@ export default function CalendarPuzzle() {
           >
             <Board {...boardProps} />
           </div>
-          <FloatingControls {...panelProps} />
         </div>
 
         {/* Piece tray — col 2 rows 1-3 on desktop, row 2 on mobile */}

@@ -1,29 +1,136 @@
 "use client";
 
-import { PIECES, TRAY_SZ } from "@/lib/pieces";
+import { PIECES, TRAY_SZ, transform, type Rot } from "@/lib/pieces";
 import type { Placement } from "@/lib/solver";
 
 interface PieceTrayProps {
   placements: Placement[];
   activeId: string | null;
   solving: boolean;
+  rotation: Rot;
+  flipped: boolean;
   onSelectPiece: (id: string | null) => void;
   onRotate: () => void;
+  onFlip: () => void;
+  onCancel: () => void;
   onReset: () => void;
   onSolve: () => void;
 }
+
+const PREVIEW_CELL = 26;
 
 export default function PieceTray({
   placements,
   activeId,
   solving,
+  rotation,
+  flipped,
   onSelectPiece,
   onRotate,
+  onFlip,
+  onCancel,
   onReset,
   onSolve,
 }: PieceTrayProps) {
   const placedIds = new Set(placements.map((p) => p.pieceId));
 
+  // ── Mobile active-piece panel ──────────────────────────────────────────────
+  const activePieceData = activeId ? PIECES.find((p) => p.id === activeId) : null;
+  let activePiecePanel: React.ReactNode = null;
+
+  if (activePieceData) {
+    const cells = transform(activePieceData.cells, rotation, flipped);
+    const maxR = Math.max(...cells.map((c) => c[0]));
+    const maxC = Math.max(...cells.map((c) => c[1]));
+    const svgW = (maxC + 1) * PREVIEW_CELL;
+    const svgH = (maxR + 1) * PREVIEW_CELL;
+
+    const btnStyle: React.CSSProperties = {
+      padding: "8px 16px",
+      borderRadius: 10,
+      border: "1.5px solid rgba(139,105,20,0.3)",
+      background: "rgba(139,105,20,0.09)",
+      color: "#7a5218",
+      fontSize: 13,
+      fontWeight: 700,
+      cursor: "pointer",
+      letterSpacing: "0.02em",
+    };
+
+    activePiecePanel = (
+      <div
+        className="md:hidden flex flex-col items-center gap-2 py-2"
+        style={{
+          background: "linear-gradient(135deg, #fdf8f0 0%, #f5ead8 100%)",
+          border: "1.5px solid rgba(139,105,20,0.2)",
+          borderRadius: 14,
+          padding: "12px 16px",
+        }}
+      >
+        <p
+          style={{
+            fontSize: 10,
+            fontWeight: 700,
+            color: "#a07830",
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            margin: 0,
+          }}
+        >
+          Piece {activeId} — drag on board · lift to place
+        </p>
+
+        {/* Large piece preview */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: 60,
+          }}
+        >
+          <svg
+            width={svgW}
+            height={svgH}
+            viewBox={`0 0 ${svgW} ${svgH}`}
+            style={{ display: "block" }}
+          >
+            {cells.map(([r, c], i) => (
+              <rect
+                key={i}
+                x={c * PREVIEW_CELL + 1}
+                y={r * PREVIEW_CELL + 1}
+                width={PREVIEW_CELL - 2}
+                height={PREVIEW_CELL - 2}
+                rx={4}
+                fill={activePieceData.color}
+                stroke="rgba(100,70,10,0.35)"
+                strokeWidth={1.5}
+              />
+            ))}
+          </svg>
+        </div>
+
+        {/* Controls */}
+        <div style={{ display: "flex", gap: 8 }}>
+          <button style={btnStyle} onClick={onRotate}>
+            ↻ Rotate
+          </button>
+          <button style={btnStyle} onClick={onFlip}>
+            ⇄ Flip
+          </button>
+          <button
+            style={{ ...btnStyle, color: "#9a4040", borderColor: "rgba(180,60,60,0.3)" }}
+            onClick={onCancel}
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Piece grid ─────────────────────────────────────────────────────────────
   const pieces = PIECES.map((piece) => {
     const isPlaced = placedIds.has(piece.id);
     const isActive = activeId === piece.id;
@@ -113,15 +220,18 @@ export default function PieceTray({
         Pieces ({placements.length}/10)
       </p>
 
-      {/* Horizontal scroll on mobile, vertical stack on desktop */}
+      {/* Mobile: show active piece panel OR piece grid */}
+      {activePiecePanel}
+
       <div
-        className="flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-x-visible pb-1 md:pb-0"
+        className={`${activeId ? "hidden md:flex" : "flex"} flex-row md:flex-col gap-2 overflow-x-auto md:overflow-x-visible pb-1 md:pb-0`}
         style={{ scrollbarWidth: "none" }}
       >
         {pieces}
       </div>
 
-      <div className="flex gap-2 mt-1 md:hidden">
+      {/* Reset / Solve — mobile only (desktop has its own row in page.tsx) */}
+      <div className={`flex gap-2 mt-1 md:hidden ${activeId ? "hidden" : ""}`}>
         <button
           onClick={onReset}
           style={{

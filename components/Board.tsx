@@ -27,6 +27,9 @@ interface BoardProps {
   onLongPress: (row: number, col: number) => void;
 }
 
+/** Shift the touch preview this many rows above the raw touch point so the piece is visible above the finger. */
+const TOUCH_ROW_OFFSET = -2;
+
 /** Walk up the DOM from `el` to find the nearest element with data-row / data-col. */
 function cellFromPoint(x: number, y: number): [number, number] | null {
   let el = document.elementFromPoint(x, y);
@@ -85,7 +88,7 @@ export default function Board({
       if (!cell) return;
       const [row, col] = cell;
       if (activeId) {
-        onHover([row, col]);
+        onHover([row + TOUCH_ROW_OFFSET, col]);
       } else {
         const pieceId = coverage.get(`${row},${col}`);
         if (pieceId) {
@@ -105,7 +108,7 @@ export default function Board({
       const touch = e.touches[0];
       const cell = cellFromPoint(touch.clientX, touch.clientY);
       if (activeId) {
-        if (cell) onHover([cell[0], cell[1]]);
+        if (cell) onHover([cell[0] + TOUCH_ROW_OFFSET, cell[1]]);
       } else if (pressingCell) {
         if (
           !cell ||
@@ -126,7 +129,7 @@ export default function Board({
       e.preventDefault(); // suppress subsequent click event
       const touch = e.changedTouches[0];
       const cell = cellFromPoint(touch.clientX, touch.clientY);
-      if (cell) onCellClick(cell[0], cell[1]);
+      if (cell) onCellClick(cell[0] + TOUCH_ROW_OFFSET, cell[1]);
       onHover(null);
     },
     [activeId, onCellClick, onHover, cancelLongPress],

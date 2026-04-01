@@ -7,8 +7,12 @@ const base = {
   placements: [],
   activeId: null,
   solving: false,
+  rotation: 0 as const,
+  flipped: false,
   onSelectPiece: vi.fn(),
   onRotate: vi.fn(),
+  onFlip: vi.fn(),
+  onCancel: vi.fn(),
   onReset: vi.fn(),
   onSolve: vi.fn(),
 };

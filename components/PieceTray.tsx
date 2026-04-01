@@ -223,11 +223,21 @@ export default function PieceTray({
       {/* Mobile: show active piece panel OR piece grid */}
       {activePiecePanel}
 
-      <div
-        className={`${activeId ? "hidden md:flex" : "flex"} flex-row md:flex-col gap-2 overflow-x-auto md:overflow-x-visible pb-1 md:pb-0`}
-        style={{ scrollbarWidth: "none" }}
-      >
-        {pieces}
+      {/* Wrapper adds a right-side fade on mobile to hint there are more pieces to scroll */}
+      <div className="relative md:contents">
+        <div
+          className={`${activeId ? "hidden md:flex" : "flex"} flex-row md:flex-col gap-2 overflow-x-auto md:overflow-x-visible pb-1 md:pb-0`}
+          style={{ scrollbarWidth: "none" }}
+        >
+          {pieces}
+        </div>
+        <div
+          className="md:hidden pointer-events-none absolute inset-y-0 right-0 w-10"
+          style={{
+            background:
+              "linear-gradient(to right, transparent, rgba(241,235,220,0.92))",
+          }}
+        />
       </div>
 
       {/* Reset / Solve — mobile only (desktop has its own row in page.tsx) */}

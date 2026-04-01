@@ -18,6 +18,7 @@ import {
 } from "@/lib/board";
 import { PIECES, absoluteCells, type RC, type Rot } from "@/lib/pieces";
 import { solvePuzzle, type Placement } from "@/lib/solver";
+import { useHistory } from "@/lib/useHistory";
 
 export default function CalendarPuzzle() {
   const def = getDefaultDate();
@@ -28,7 +29,15 @@ export default function CalendarPuzzle() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [rotation, setRotation] = useState<Rot>(0);
   const [flipped, setFlipped] = useState(false);
-  const [placements, setPlacements] = useState<Placement[]>([]);
+  const {
+    placements,
+    commit,
+    undo,
+    redo,
+    reset: resetHistory,
+    canUndo,
+    canRedo,
+  } = useHistory();
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
   const [hover, setHover] = useState<RC | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -101,12 +110,10 @@ export default function CalendarPuzzle() {
       const solution = solvePuzzle(month, day, dow);
       setSolving(false);
       if (solution) {
-        setPlacements([]);
+        resetHistory();
+        setRemovingIds(new Set());
         solution.forEach((placement, i) => {
-          setTimeout(
-            () => setPlacements((prev) => [...prev, placement]),
-            i * 80,
-          );
+          setTimeout(() => commit((prev) => [...prev, placement]), i * 80);
         });
       } else {
         alert("No solution found for this date with the current pieces.");
@@ -117,15 +124,17 @@ export default function CalendarPuzzle() {
   // Keyboard shortcuts
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
+      const ctrl = e.ctrlKey || e.metaKey;
+      if (ctrl && e.key === "z") { e.preventDefault(); undo(); return; }
+      if (ctrl && (e.key === "y" || (e.shiftKey && e.key === "Z"))) { e.preventDefault(); redo(); return; }
       if (!activeId) return;
-      if (e.key === "r" || e.key === "R")
-        setRotation((r) => ((r + 1) % 4) as Rot);
+      if (e.key === "r" || e.key === "R") setRotation((r) => ((r + 1) % 4) as Rot);
       if (e.key === "f" || e.key === "F") setFlipped((f) => !f);
       if (e.key === "Escape") setActiveId(null);
     };
     window.addEventListener("keydown", fn);
     return () => window.removeEventListener("keydown", fn);
-  }, [activeId]);
+  }, [activeId, undo, redo]);
 
   // Mouse-wheel rotation when a piece is active
   useEffect(() => {
@@ -144,7 +153,7 @@ export default function CalendarPuzzle() {
       if (!label) return;
       if (activeId && activePiece) {
         if (!previewValid) return;
-        setPlacements((prev) => [
+        commit((prev) => [
           ...prev,
           { pieceId: activeId, row, col, rot: rotation, flipped },
         ]);
@@ -156,7 +165,7 @@ export default function CalendarPuzzle() {
         const pieceId = coverage.get(`${row},${col}`);
         if (pieceId && !removingIds.has(pieceId)) {
           const pl = placements.find((p) => p.pieceId === pieceId)!;
-          setPlacements((prev) => prev.filter((p) => p.pieceId !== pieceId));
+          commit((prev) => prev.filter((p) => p.pieceId !== pieceId));
           setActiveId(pieceId);
           setRotation(pl.rot);
           setFlipped(pl.flipped);
@@ -184,14 +193,14 @@ export default function CalendarPuzzle() {
   const removeWithAnimation = useCallback((ids: string[]) => {
     setRemovingIds((prev) => new Set([...prev, ...ids]));
     setTimeout(() => {
-      setPlacements((prev) => prev.filter((p) => !ids.includes(p.pieceId)));
+      commit((prev) => prev.filter((p) => !ids.includes(p.pieceId)));
       setRemovingIds((prev) => {
         const next = new Set(prev);
         ids.forEach((id) => next.delete(id));
         return next;
       });
     }, ANIM_MS);
-  }, []);
+  }, [commit]);
 
   const handleRightClick = useCallback(
     (e: React.MouseEvent, row: number, col: number) => {
@@ -209,11 +218,11 @@ export default function CalendarPuzzle() {
   }, []);
 
   const handleReset = useCallback(() => {
-    const ids = placements.map((p) => p.pieceId);
     setActiveId(null);
-    if (ids.length === 0) return;
-    removeWithAnimation(ids);
-  }, [placements, removeWithAnimation]);
+    if (placements.length === 0) return;
+    resetHistory();
+    setRemovingIds(new Set());
+  }, [placements, resetHistory]);
 
   const trayProps = {
     placements,
@@ -221,10 +230,14 @@ export default function CalendarPuzzle() {
     solving,
     rotation,
     flipped,
+    canUndo,
+    canRedo,
     onSelectPiece: handleSelectPiece,
     onRotate: () => setRotation((r) => ((r + 1) % 4) as Rot),
     onFlip: () => setFlipped((f) => !f),
     onCancel: () => setActiveId(null),
+    onUndo: undo,
+    onRedo: redo,
     onReset: handleReset,
     onSolve: () => {
       setActiveId(null);
@@ -296,7 +309,7 @@ export default function CalendarPuzzle() {
           <PieceTray {...trayProps} />
         </div>
 
-        {/* Reset / Solve — desktop only, col 1 row 2 (above instructions) */}
+        {/* Reset / Undo / Redo / Solve — desktop only, col 1 row 2 (above instructions) */}
         <div
           className="hidden md:flex gap-2 md:col-start-1 md:row-start-2"
           style={{ width: scaledW }}
@@ -315,7 +328,43 @@ export default function CalendarPuzzle() {
               cursor: "pointer",
             }}
           >
-            Reset all
+            Reset
+          </button>
+          <button
+            onClick={undo}
+            disabled={!canUndo}
+            title="Undo (Ctrl+Z)"
+            style={{
+              flex: 1,
+              padding: "6px 0",
+              borderRadius: 8,
+              fontSize: 14,
+              fontWeight: 600,
+              background: "rgba(139,105,20,0.07)",
+              border: "1px solid rgba(139,105,20,0.2)",
+              color: canUndo ? "#7a5218" : "#c0aa80",
+              cursor: canUndo ? "pointer" : "default",
+            }}
+          >
+            ↩
+          </button>
+          <button
+            onClick={redo}
+            disabled={!canRedo}
+            title="Redo (Ctrl+Y)"
+            style={{
+              flex: 1,
+              padding: "6px 0",
+              borderRadius: 8,
+              fontSize: 14,
+              fontWeight: 600,
+              background: "rgba(139,105,20,0.07)",
+              border: "1px solid rgba(139,105,20,0.2)",
+              color: canRedo ? "#7a5218" : "#c0aa80",
+              cursor: canRedo ? "pointer" : "default",
+            }}
+          >
+            ↪
           </button>
           <button
             onClick={trayProps.onSolve}

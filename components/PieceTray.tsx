@@ -9,10 +9,14 @@ interface PieceTrayProps {
   solving: boolean;
   rotation: Rot;
   flipped: boolean;
+  canUndo: boolean;
+  canRedo: boolean;
   onSelectPiece: (id: string | null) => void;
   onRotate: () => void;
   onFlip: () => void;
   onCancel: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
   onReset: () => void;
   onSolve: () => void;
 }
@@ -25,10 +29,14 @@ export default function PieceTray({
   solving,
   rotation,
   flipped,
+  canUndo,
+  canRedo,
   onSelectPiece,
   onRotate,
   onFlip,
   onCancel,
+  onUndo,
+  onRedo,
   onReset,
   onSolve,
 }: PieceTrayProps) {
@@ -240,7 +248,7 @@ export default function PieceTray({
         />
       </div>
 
-      {/* Reset / Solve — mobile only (desktop has its own row in page.tsx) */}
+      {/* Reset / Undo / Redo / Solve — mobile only (desktop has its own row in page.tsx) */}
       <div className={`flex gap-2 mt-1 md:hidden ${activeId ? "hidden" : ""}`}>
         <button
           onClick={onReset}
@@ -256,7 +264,41 @@ export default function PieceTray({
             cursor: "pointer",
           }}
         >
-          Reset all
+          Reset
+        </button>
+        <button
+          onClick={onUndo}
+          disabled={!canUndo}
+          style={{
+            flex: 1,
+            padding: "6px 0",
+            borderRadius: 8,
+            fontSize: 14,
+            fontWeight: 600,
+            background: "rgba(139,105,20,0.07)",
+            border: "1px solid rgba(139,105,20,0.2)",
+            color: canUndo ? "#7a5218" : "#c0aa80",
+            cursor: canUndo ? "pointer" : "default",
+          }}
+        >
+          ↩
+        </button>
+        <button
+          onClick={onRedo}
+          disabled={!canRedo}
+          style={{
+            flex: 1,
+            padding: "6px 0",
+            borderRadius: 8,
+            fontSize: 14,
+            fontWeight: 600,
+            background: "rgba(139,105,20,0.07)",
+            border: "1px solid rgba(139,105,20,0.2)",
+            color: canRedo ? "#7a5218" : "#c0aa80",
+            cursor: canRedo ? "pointer" : "default",
+          }}
+        >
+          ↪
         </button>
         <button
           onClick={onSolve}

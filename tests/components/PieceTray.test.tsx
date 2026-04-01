@@ -9,10 +9,14 @@ const base = {
   solving: false,
   rotation: 0 as const,
   flipped: false,
+  canUndo: false,
+  canRedo: false,
   onSelectPiece: vi.fn(),
   onRotate: vi.fn(),
   onFlip: vi.fn(),
   onCancel: vi.fn(),
+  onUndo: vi.fn(),
+  onRedo: vi.fn(),
   onReset: vi.fn(),
   onSolve: vi.fn(),
 };
@@ -70,7 +74,7 @@ describe("PieceTray", () => {
   it("calls onReset when Reset all is clicked", () => {
     const onReset = vi.fn();
     render(<PieceTray {...base} onReset={onReset} />);
-    fireEvent.click(screen.getByText("Reset all"));
+    fireEvent.click(screen.getByText("Reset"));
     expect(onReset).toHaveBeenCalledOnce();
   });
 

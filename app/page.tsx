@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  useSyncExternalStore,
+} from "react";
 
 import Board from "@/components/Board";
 import PieceTray from "@/components/PieceTray";
@@ -17,14 +23,34 @@ import {
   BOARD_OUTER_HEIGHT,
 } from "@/lib/board";
 import { PIECES, absoluteCells, type RC, type Rot } from "@/lib/pieces";
-import { solvePuzzle, type Placement } from "@/lib/solver";
+import { solvePuzzle } from "@/lib/solver";
 import { useHistory } from "@/lib/useHistory";
 
+// The visitor's local date is a client-only value: during static prerender
+// there is no "today", so calling getDefaultDate() at build time would bake a
+// frozen date into the HTML (the production bug). We serve a deterministic
+// placeholder on the server and switch to the real local date after hydration.
+// useSyncExternalStore does this with no hydration mismatch and no
+// setState-in-effect.
+const DATE_PLACEHOLDER = { month: MONTHS[0], day: "1", dow: DAYS_DOW[0] };
+let clientDateCache: { month: string; day: string; dow: string } | null = null;
+const subscribeToDate = () => () => {};
+const getClientDate = () => (clientDateCache ??= getDefaultDate());
+const getServerDate = () => DATE_PLACEHOLDER;
+
 export default function CalendarPuzzle() {
-  const def = getDefaultDate();
-  const [month, setMonth] = useState(def.month);
-  const [day, setDay] = useState(def.day);
-  const [dow, setDow] = useState(def.dow);
+  const today = useSyncExternalStore(
+    subscribeToDate,
+    getClientDate,
+    getServerDate,
+  );
+  // Default to today's date; a user tap on the board overrides each field.
+  const [pickedMonth, setMonth] = useState<string | null>(null);
+  const [pickedDay, setDay] = useState<string | null>(null);
+  const [pickedDow, setDow] = useState<string | null>(null);
+  const month = pickedMonth ?? today.month;
+  const day = pickedDay ?? today.day;
+  const dow = pickedDow ?? today.dow;
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [rotation, setRotation] = useState<Rot>(0);
@@ -119,7 +145,7 @@ export default function CalendarPuzzle() {
         alert("No solution found for this date with the current pieces.");
       }
     }, 50);
-  }, [month, day, dow]);
+  }, [month, day, dow, resetHistory, commit]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -185,6 +211,7 @@ export default function CalendarPuzzle() {
       coverage,
       removingIds,
       placements,
+      commit,
     ],
   );
 
